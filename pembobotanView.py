@@ -101,14 +101,60 @@ class Ui_PembobotanWindow(object):
         likehood = self.probabilitasLikehood()
 
         cur, con = connection()
-        cur.execute('Select komentar, id_komentar from preprocessing_uji')
+        cur.execute('Select id, komentar from komentar')
         komentar_uji = cur.fetchall()
+        cur.execute('Select komentar, id_komentar from preprocessing_uji')
+        preprocessing_uji = cur.fetchall()
 
-        tes = []
-        for k in komentar_uji:
-            if k[0] in [l[0] for l in likehood]:
-                tes.append(k[0])
-        print(likehood[0][0])
+        newArray = []
+        for ku in komentar_uji:
+            data = [ku[0]]
+            for pu in preprocessing_uji:
+                if ku[0] == pu[1]:
+                    data.append(pu[0])
+            newArray.append(data)
+
+        perhitungan = []
+        for na in newArray:
+            value = [na[0]]
+            for n in na[1:]:
+                for l in likehood:
+                    if n == l[0]:
+                        value.append(l)
+            perhitungan.append(value)
+
+        for perhit in perhitungan:
+            hitungPositif = 0
+            hitungNegatif = 0
+            hitungNetral = 0
+            for per in perhit[1:]:
+                if hitungPositif == 0:
+                    hitungPositif = per[1] * prior
+                    hitungNegatif = per[2] * prior
+                    hitungNetral = per[3] * prior
+                else:
+                    hitungPositif = hitungPositif * per[1]
+                    hitungNegatif = hitungNegatif * per[2]
+                    hitungNetral = hitungNetral * per[3]
+
+            for komen in komentar_uji:
+                if komen[0] == perhit[0]:
+                    sentimen = ''
+                    if hitungPositif > hitungNegatif > hitungNetral:
+                        sentimen = 'Positive'
+                    elif hitungNegatif > hitungPositif > hitungNetral:
+                        sentimen = 'Negative'
+                    else:
+                        sentimen = 'Neutral'
+
+                    hasil_algoritma = [komen[1], sentimen]
+                    sql_algoritma = "insert into naive_bayes (komentar, sentimen) values (%s, %s)"
+                    save_algoritma = cur.execute(sql_algoritma, hasil_algoritma)
+
+        if (save_algoritma):
+            messagebox("SUKSES", "Data Perhitungan Algoritma Tersimpan")
+        else:
+            messagebox("GAGAL", "Data Perhitungan Algoritma Gagal Disimpan")
 
     def setupUi(self, PembobotanWindow):
         PembobotanWindow.setObjectName("PembobotanWindow")

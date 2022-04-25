@@ -137,7 +137,7 @@ class Ui_MainWindow(object):
             for i in links:
                 youtube.open(i)
 
-                for j in range(0, 2):
+                for j in range(0, 5):
                     response = youtube.video_comments()
                     data = response['body']
 
